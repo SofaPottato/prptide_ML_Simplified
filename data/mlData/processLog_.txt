@@ -1,0 +1,3 @@
+Origin Data Feature Number = 19
+Remove Feature Number = 11
+Remained Data Feature Number = 8
