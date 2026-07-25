@@ -18,8 +18,8 @@ paramPath = "../data/param/"         # 內含檔案: featureTypeDict.pkl, normal
 normalizeMethod = 'minmax'
 dataName = 'HPRD50'
 
-trainMLTableCsv = "../data/HPRD50/trainmlTable.csv"
-indpMLTableCsv = "../data/H{RD50/testmlTable.csv"
+trainMLTableCsv = "../data/HPRD50trainmlTable.csv"
+indpMLTableCsv = "../data/HPRD50testmlTable.csv"
 
 
 trainDf = loadMLTable(trainMLTableCsv)
