@@ -25,7 +25,7 @@ class FeatureStat:
         分析各feature區間並繪製在圖像中分析斜率，並算出各區間累積和獨立的比數即占比
         :return:
         """
-        pepTypeList = []
+        featureNameList = []
         sd = []
         in_one = 0    # 0~1
         in_two = 0    # 1~2
@@ -44,7 +44,7 @@ class FeatureStat:
                 print(f'Found NaN In Std List -- {column}!!!')
                 self.stdNanList.append(column)
             else:
-                pepTypeList.append(column)
+                featureNameList.append(column)
                 sd.append(round(st_dev, 6))
                 if int(st_dev) <= 1:
                     in_one = in_one+1
@@ -56,7 +56,8 @@ class FeatureStat:
                     in_four = in_four + 1
                 else:
                     above_four = above_four + 1
-        self.newDataDict["pepTypeList"] = pepTypeList
+        # 這個 key 必須維持第一個插入，processData 讀 xlsx 是用 index_col=[1] 依位置取特徵名
+        self.newDataDict["featureName"] = featureNameList
         self.newDataDict["standard deviation"] = sd
         print(f"\n|  [0~1]: {in_one}--[{round(in_one/x,6)}%] [1~2]: {in_two}--[{round(in_two/x,6)}%] [2~3]: {in_three}--[{round(in_three/x,6)}%] [3~4]: {in_four}--[{round(in_four/x,6)}%] [4<]: {above_four}--[{round(above_four/x,6)}%]  |\n|  [1sum]: {in_one}--[{round(in_one/x,6)}%] [2sum]: {in_one+in_two}--[{round((in_one+in_two)/x,6)}%] [3sum]: {in_one+in_two+in_three}--[{round((in_one+in_two+in_three)/x,6)}%] [4sum]: {in_one+in_two+in_three+in_four}--[{round((in_one+in_two+in_three+in_four)/x,6)}%] [above4sum]: {in_one+in_two+in_three+in_four+above_four}--[{round((in_one+in_two+in_three+in_four+above_four)/x,6)}%]  |")
 
@@ -254,7 +255,10 @@ class FeatureStat:
         """
         path = logPath + 'processLog_.txt'
         file = open(path, 'w')
-        print(f'Origin Data Feature Number = {len(self.data.columns.tolist())}', file=file)
+        # 計特徵數時排除 label 欄 (y)，避免把 label 也算成 feature
+        originFeatCols = [c for c in self.data.columns.tolist() if c != 'y']
+        remainedFeatCols = [c for c in self.newTrainDf.columns.tolist() if c != 'y']
+        print(f'Origin Data Feature Number = {len(originFeatCols)}', file=file)
         print(f'Remove Feature Number = {len(self.removeList)}', file=file)
-        print(f"Remained Data Feature Number = {len(self.newTrainDf.columns.tolist())}", file=file)
+        print(f"Remained Data Feature Number = {len(remainedFeatCols)}", file=file)
 

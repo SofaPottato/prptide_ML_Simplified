@@ -1,6 +1,12 @@
 import json
+import os
+import sys
+import matplotlib
 
-from fontTools.ufoLib.utils import F
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
+os.chdir(os.path.dirname(os.path.abspath(__file__))) 
+matplotlib.use("Agg") 
 
 from userPackage.Package_Encode_Simplified import FeatureEngineering
 from userPackage.FeatureStat import FeatureStat
@@ -9,16 +15,15 @@ from userPackage.convertMLTable import loadMLTable
 
 mlDataPath = "../data/mlData/"        # 內含 data 檔案 ex : train_F390.csv, boruta 檔案 ex :Boruta-featRank-RF.csv
 paramPath = "../data/param/"         # 內含檔案: featureTypeDict.pkl, normalize.pkl
-normalizeMethod = 'standard'
+normalizeMethod = 'minmax'
 dataName = 'HPRD50'
 
-# 直接讀兩個 mlTable.Csv
-trainMlTableCsv = "../data/HPRD50_train_mlTable.csv"
-indpMlTableCsv = "../data/HPRD50_test_mlTable.csv"
+trainMLTableCsv = "../data/HPRD50/trainmlTable.csv"
+indpMLTableCsv = "../data/H{RD50/testmlTable.csv"
 
 
-trainDf = loadMLTable(trainMlTableCsv)
-indpDf = loadMLTable(indpMlTableCsv)
+trainDf = loadMLTable(trainMLTableCsv)
+indpDf = loadMLTable(indpMLTableCsv)
 
 feObj = FeatureEngineering()
 
@@ -84,7 +89,7 @@ with open(removeFeatureListPath, 'w') as f:
 brtObj = feObj.dataBoruta(borutaMethod='XGB', runBoruta=True, featRankPath=mlDataPath,
                           trainDf=filteredTrainNmlzDf)
 
-feObj.dataEvalFeatureNum(startNum=2, endNum=6, step=2,
+feObj.dataEvalFeatureNum(startNum=2, endNum=40, step=2,
                          featNumScorePath=mlDataPath, saveCsvPath=mlDataPath,
                          trainDf=filteredTrainNmlzDf, indpDf=indpNmlzDf, brtObj=brtObj, foldNum=5, session=None)#sessionID可修改成任意整數，ex:1,4,10,15...
 #startNum=5, endNum=50, step=5

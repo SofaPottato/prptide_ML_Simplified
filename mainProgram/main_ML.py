@@ -1,22 +1,26 @@
 import os
 import sys
 import matplotlib
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
+os.chdir(os.path.dirname(os.path.abspath(__file__))) 
+matplotlib.use("Agg") 
+
+import optuna
+optuna.logging.set_verbosity(optuna.logging.ERROR)
+
 import pandas as pd
 import numpy as np
 import random
 from MLProcess.PycaretWrapper import PycaretWrapper
 from MLProcess.Predict import Predict
 from MLProcess.Scoring import Scoring
-from MLProcess.Stacking import Stacking
-from MLProcess.Voting import Voting
+# from MLProcess.Stacking import Stacking   # 已停用 voting/stacking (ΔMCC=0)
+# from MLProcess.Voting import Voting        # 已停用 voting/stacking (ΔMCC=0)
 from MLProcess.DrawPlot import DrawPlot
-from sklearn.linear_model import LogisticRegression
+# from sklearn.linear_model import LogisticRegression   # 只被 stacking 的 final_estimator 用到，已停用
 from collections import Counter
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
-os.chdir(os.path.dirname(os.path.abspath(__file__))) 
-matplotlib.use("Agg") 
 
 
 def changeBinaryFeatureInDf(dataDf):
@@ -65,42 +69,43 @@ def changeBinaryFeatureInDf(dataDf):
     return dataDf
 
 
-def voting(dataIndp, loadModelPath, voteNumList, selfTestScoreDf, sortingMeasure):
-    dataIndp_X = dataIndp.drop(["y"], axis=1)
-    dataIndp_y = dataIndp[["y"]]
-    pycVoteObj = PycaretWrapper()
-    vote01_predVectorListIndp = []
-    voteFrac_probVectorListIndp = []
-    voteFrac_predVectorListIndp = []
-    voteModelNameList = []
-    selfTestModelNameList = []
-    selfTestScoreDf = selfTestScoreDf.sort_values(by=sortingMeasure, ascending=False)
-    print('voting model selected by ' + str(sortingMeasure) + '!!!')
-    selfTestModelIndexList = selfTestScoreDf.index.tolist()
-    for selfTestModelIndex in selfTestModelIndexList:
-        selfTestModelName = ''.join(selfTestModelIndex)
-        selfTestModelNameList.append(selfTestModelName)
-    for voteNum in voteNumList:
-        fileNameList = selfTestModelNameList[:voteNum]
-        finalModelList = pycVoteObj.doLoadModel(loadModelPath, b_isFinalizedModel=True, fileNameList=fileNameList)
-        voteObjIndp = Voting(dataX=dataIndp_X, modelList=finalModelList)
-        vote01_predVectorIndp = voteObjIndp.vote_predVector()
-        voteFrac_predVectorIndp, voteFrac_probVectorIndp = voteObjIndp.vote_probVector(cutoff=0.5)
-        vote01_predVectorListIndp.append(vote01_predVectorIndp)
-        voteFrac_predVectorListIndp.append(voteFrac_predVectorIndp)
-        voteFrac_probVectorListIndp.append(voteFrac_probVectorIndp)
-        voteModelNameList.append('voting_' + str(voteNum))
-        print('Voting model with ' + str(voteNum) + ' estimators: ' + str(fileNameList))
-    '''算分 : 使用 [0, 1] 投票的結果,仍需 probVector 來計算 AUC'''
-    scoreObj = Scoring(predVectorList=vote01_predVectorListIndp, probVectorList=voteFrac_probVectorListIndp,
-                       answerDf=dataIndp_y, modelNameList=voteModelNameList)
-    scoreDf = scoreObj.doScoring(b_optimizedMcc=False, sortColumn='mcc')
-    '''算分 : 使用 prob 投票的結果,仍需 probVector 來計算 AUC'''
-    scoreProbObj = Scoring(predVectorList=voteFrac_predVectorListIndp, probVectorList=voteFrac_probVectorListIndp,
-                           answerDf=dataIndp_y, modelNameList=voteModelNameList)
-    scoreProbDf = scoreProbObj.doScoring(b_optimizedMcc=False, sortColumn='mcc')
-
-    return scoreDf, scoreProbDf
+# ----- voting() 已停用 (voting/stacking 對此資料 ΔMCC=0，見 complementarityAnalysis 結論) -----
+# def voting(dataIndp, loadModelPath, voteNumList, selfTestScoreDf, sortingMeasure):
+#     dataIndp_X = dataIndp.drop(["y"], axis=1)
+#     dataIndp_y = dataIndp[["y"]]
+#     pycVoteObj = PycaretWrapper()
+#     vote01_predVectorListIndp = []
+#     voteFrac_probVectorListIndp = []
+#     voteFrac_predVectorListIndp = []
+#     voteModelNameList = []
+#     selfTestModelNameList = []
+#     selfTestScoreDf = selfTestScoreDf.sort_values(by=sortingMeasure, ascending=False)
+#     print('voting model selected by ' + str(sortingMeasure) + '!!!')
+#     selfTestModelIndexList = selfTestScoreDf.index.tolist()
+#     for selfTestModelIndex in selfTestModelIndexList:
+#         selfTestModelName = ''.join(selfTestModelIndex)
+#         selfTestModelNameList.append(selfTestModelName)
+#     for voteNum in voteNumList:
+#         fileNameList = selfTestModelNameList[:voteNum]
+#         finalModelList = pycVoteObj.doLoadModel(loadModelPath, b_isFinalizedModel=True, fileNameList=fileNameList)
+#         voteObjIndp = Voting(dataX=dataIndp_X, modelList=finalModelList)
+#         vote01_predVectorIndp = voteObjIndp.vote_predVector()
+#         voteFrac_predVectorIndp, voteFrac_probVectorIndp = voteObjIndp.vote_probVector(cutoff=0.5)
+#         vote01_predVectorListIndp.append(vote01_predVectorIndp)
+#         voteFrac_predVectorListIndp.append(voteFrac_predVectorIndp)
+#         voteFrac_probVectorListIndp.append(voteFrac_probVectorIndp)
+#         voteModelNameList.append('voting_' + str(voteNum))
+#         print('Voting model with ' + str(voteNum) + ' estimators: ' + str(fileNameList))
+#     # 算分 : 使用 [0, 1] 投票的結果,仍需 probVector 來計算 AUC
+#     scoreObj = Scoring(predVectorList=vote01_predVectorListIndp, probVectorList=voteFrac_probVectorListIndp,
+#                        answerDf=dataIndp_y, modelNameList=voteModelNameList)
+#     scoreDf = scoreObj.doScoring(b_optimizedMcc=False, sortColumn='mcc')
+#     # 算分 : 使用 prob 投票的結果,仍需 probVector 來計算 AUC
+#     scoreProbObj = Scoring(predVectorList=voteFrac_predVectorListIndp, probVectorList=voteFrac_probVectorListIndp,
+#                            answerDf=dataIndp_y, modelNameList=voteModelNameList)
+#     scoreProbDf = scoreProbObj.doScoring(b_optimizedMcc=False, sortColumn='mcc')
+#
+#     return scoreDf, scoreProbDf
 
 
 #####################################################################
@@ -115,7 +120,8 @@ mlScorePath = "../data/mlScore/"  # 內含 ml model 預測完並算好分的檔�
 # ratioPath = "../data/PeptideProperty/"
 # ratioPicPath = "../data/PeptidePropertyPic/"
 
-featNumber = 2
+
+featNumber = 6
 
 modelNameList = ['lightgbm', 'catboost', 'rbfsvm', 'gbc', 'ridge', 'lr', 'lda', 'ada', 'knn', 'nb', 'et', 'rf',
                  'xgboost', 'gpc', 'mlp', 'dt', 'svm', 'qda']
@@ -124,7 +130,7 @@ dataTrainDf = pd.read_csv(mlDataPath + f'/{featNumber}/' + "train_F" + str(featN
                           index_col=[0])  # 例如檔名為train_F190.csv
 dataTrainDf = changeBinaryFeatureInDf(dataTrainDf)
 pycObj = PycaretWrapper()
-setupDf = pycObj.doSetup(trainData=dataTrainDf)
+setupDf = pycObj.doSetup(trainData=dataTrainDf, sessionID=None)
 # 一般情況建議使用 TPE search
 pycObj.doTuneModel(searchLibrary='optuna', searchAlg='tpe', includeModelList=modelNameList, foldNum=5,
                    n_iter=10, early_stopping=False, customGridDict=None)
@@ -189,7 +195,9 @@ aucDf = drawObj.drawROC(colorList=None, title=False, titleName='Receiver Operati
 #           voting & stacking                                       #
 #####################################################################
 
-# clusterNumList = [3, 5, 7, 9, 11]  # [2, 3]
+# ----- 已停用: voting/stacking 對此資料相對最佳單模型 ΔMCC=0 (底層預測太相關)。 -----
+# ----- 等新 prompt (S2A/Self_ASK/Contrastive) 讓底層變多樣後再解除註解重評。      -----
+# clusterNumList = [3, 4, 5, 6, 7]  # 每個值 = 一個 stacking 模型要用的 base learner 數量
 # modelNameList = ['rbfsvm', 'gbc', 'ridge', 'lr', 'catboost', 'lda', 'ada', 'knn', 'nb', 'et', 'lightgbm', 'rf',
 #                  'xgboost', 'gpc', 'mlp', 'dt', 'svm', 'qda']
 # stackObj = Stacking(loadModelPath=tuneModelPath,
@@ -199,12 +207,12 @@ aucDf = drawObj.drawROC(colorList=None, title=False, titleName='Receiver Operati
 #                     clusterNumList=clusterNumList)
 # selfTestScoreDf = stackObj.genSelfTestResult(drawPlot=True)
 # selfTestScoreDf.to_csv(mlScorePath + 'selfTestScore.csv')
-# stkModelList = stackObj.genStkModel(selfTestScoreLabel='auc', final_estimator=LogisticRegression(), drawPlot=True,
-#                                     metric='euclidean', linkageType='ward')
+# stkModelList = stackObj.genStkModel(selfTestScoreLabel='mcc', final_estimator=LogisticRegression(), drawPlot=True,
+#                                     metric='correlation', linkageType='average')
 # stkScoreDf = stackObj.stkModelPredictScoring(scoreCsvPath=mlScorePath + 'stkModelScore.csv', drawPlot=True,
 #                                              b_isBinary=True)
 #
-# voteNumList = [3, 5, 7, 9, 11]
+# voteNumList = [3, 5, 7]  # 只用奇數避免同票
 # scoreVoteDfIndp, scoreVoteProbDfIndp = voting(dataIndp=dataIndp,
 #                                               loadModelPath=finalModelPath,
 #                                               voteNumList=voteNumList,

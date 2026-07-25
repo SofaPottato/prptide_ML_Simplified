@@ -66,7 +66,7 @@ class Stacking:
                                         cv=5,
                                         stack_method='auto',
                                         n_jobs=None,
-                                        passthrough=False,
+                                        passthrough=True,
                                         verbose=0)
             stkClassifier = stkObj.fit(self.dataTrain_X, self.dataTrain_y)
             self.stkModelList.append(stkClassifier)
